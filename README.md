@@ -17,3 +17,5 @@ The following additional scripts were used for sensitivity analyses:
 1. PGC_EWAS_Civilian_GxE_04.14.17.Rmd - Childhood Maltreatment GxE analysis in DNHS and GTP
 
 2. DNHS_GTP_NRG1_HGS_mQTL_50kb.Rmd - mQTL analysis in DNHS and GTP for *NRG1* and *HGS*
+
+3. PGC_EWAS_Civilian_08.06.17_AAonly.R - meta-analysis of African-American participants in DNHS and GTP.
