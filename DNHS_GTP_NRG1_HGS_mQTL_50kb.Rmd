@@ -1,0 +1,850 @@
+---
+title: 'PGC EWAS Civilian mQTL Analysis'
+date: "8/31/2017"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    fig_width: 6
+    fig_height: 3.5
+    includes:
+      in_header: header.tex
+bibliography: DNHS-GTP.bibtex
+---
+
+```{r setup, include=FALSE}
+setwd("/Users/ly2207/Documents/Andrew/R/PGC/Current/PGC_EWAS/08.06.17/Civilian/mQTL")
+library(ChAMP)
+library(knitr)
+library("SNPlocs.Hsapiens.dbSNP144.GRCh37")
+```
+
+# Summary
+
+We conducted an mQTL analysis of the PGC EWAS Civilian hits in *NRG1* and *HGS* using EWAS and GWAS data from DNHS and GTP. DNA methylation at neither gene's CpG site was significantly associated with SNPs located within 50kb of the CpG site after Bonferroni correction. In GTP, 35 SNPs were nominally associated with *NRG1* using the Smith model, while four SNPs were significantly associated in DNHS. None of the these SNPs though replicatd in the other study. 
+
+```{r, echo=F}
+# NRG1
+rm(list=ls())
+tab<-matrix(nrow=6, ncol=3)
+rownames(tab)<-c("N Participants", "N SNPs Tested", 
+                 "N p<0.05: Smith Model", "N FWER Sig: Smith Model",
+                 "N p<0.05: Armstrong Model", "N FWER Sig: Armstrong Model")
+colnames(tab)<-c("DNHS", "GTP", "Overlap")
+
+tab["N Participants", "DNHS"]<-67
+tab["N Participants", "GTP"]<-124
+tab["N Participants", "Overlap"]<-"N/A"
+
+load("DNHS_NRG1_snpList_50kb.Rdata")
+dnhsSnps<-as.character(snpList)
+rm(snpList)
+load("GTP_NRG1_snpList_50kb.Rdata")
+gtpSnps<-snpList
+rm(snpList)
+
+tab["N SNPs Tested", "DNHS"]<-length(dnhsSnps)
+tab["N SNPs Tested", "GTP"]<-length(gtpSnps)
+tab["N SNPs Tested", "Overlap"]<-paste(sum(dnhsSnps%in%gtpSnps)/min(length(dnhsSnps), length(gtpSnps))*100, "%", sep="")
+rm(dnhsSnps, gtpSnps)
+
+gtpSmith<-read.csv("GTP124_NRG1_mQTL_Smith_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Smith Model", "GTP"]<-sum(gtpSmith$p<=0.05)
+tab["N FWER Sig: Smith Model", "GTP"]<-sum(gtpSmith$Bonferroni<=0.05)
+
+dnhsSmith<-read.csv("DNHS67_NRG1_mQTL_Smith_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Smith Model", "DNHS"]<-sum(dnhsSmith$p<=0.05)
+tab["N FWER Sig: Smith Model", "DNHS"]<-sum(dnhsSmith$Bonferroni<=0.05)
+
+gtp<-gtpSmith[which(gtpSmith$p<=0.05), "SNP"]
+dnhs<-dnhsSmith[which(dnhsSmith$p<=0.05), "SNP"]
+tab["N p<0.05: Smith Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(gtp, dnhs)
+
+gtp<-gtpSmith[which(gtpSmith$Bonferroni<=0.05), "SNP"]
+dnhs<-dnhsSmith[which(dnhsSmith$Bonferroni<=0.05), "SNP"]
+tab["N FWER Sig: Smith Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(dnhsSmith, gtpSmith, dnhs, gtp)
+
+gtpArmstrong<-read.csv("GTP124_NRG1_mQTL_Armstrong_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Armstrong Model", "GTP"]<-sum(gtpArmstrong$p<=0.05)
+tab["N FWER Sig: Armstrong Model", "GTP"]<-sum(gtpArmstrong$Bonferroni<=0.05)
+
+dnhsArmstrong<-read.csv("DNHS67_NRG1_mQTL_Armstrong_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Armstrong Model", "DNHS"]<-sum(dnhsArmstrong$p<=0.05)
+tab["N FWER Sig: Armstrong Model", "DNHS"]<-sum(dnhsArmstrong$Bonferroni<=0.05)
+
+gtp<-gtpArmstrong[which(gtpArmstrong$p<=0.05), "SNP"]
+dnhs<-dnhsArmstrong[which(dnhsArmstrong$p<=0.05), "SNP"]
+tab["N p<0.05: Armstrong Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(gtp, dnhs)
+
+gtp<-gtpArmstrong[which(gtpArmstrong$Bonferroni<=0.05), "SNP"]
+dnhs<-dnhsArmstrong[which(dnhsArmstrong$Bonferroni<=0.05), "SNP"]
+tab["N FWER Sig: Armstrong Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(dnhsArmstrong, gtpArmstrong, dnhs, gtp)
+
+kable(tab, caption="*NRG1* Results")
+```
+
+
+```{r, echo=F}
+# HGS Results
+rm(list=ls())
+tab<-matrix(nrow=6, ncol=3)
+rownames(tab)<-c("N Participants", "N SNPs Tested", 
+                 "N p<0.05: Smith Model", "N FWER Sig: Smith Model",
+                 "N p<0.05: Armstrong Model", "N FWER Sig: Armstrong Model")
+colnames(tab)<-c("DNHS", "GTP", "Overlap")
+
+tab["N Participants", "DNHS"]<-67
+tab["N Participants", "GTP"]<-124
+tab["N Participants", "Overlap"]<-"N/A"
+
+load("DNHS_HGS_snpList_50kb.Rdata")
+dnhsSnps<-as.character(snpList)
+rm(snpList)
+load("GTP_HGS_snpList_50kb.Rdata")
+gtpSnps<-snpList
+rm(snpList)
+
+tab["N SNPs Tested", "DNHS"]<-length(dnhsSnps)
+tab["N SNPs Tested", "GTP"]<-length(gtpSnps)
+tab["N SNPs Tested", "Overlap"]<-paste(round(sum(dnhsSnps%in%gtpSnps)/min(length(dnhsSnps), 
+                                                                          length(gtpSnps))*100,2), "%", sep="")
+
+gtpSmith<-read.csv("GTP124_HGS_mQTL_Smith_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Smith Model", "GTP"]<-sum(gtpSmith$p<=0.05)
+tab["N FWER Sig: Smith Model", "GTP"]<-sum(gtpSmith$Bonferroni<=0.05)
+
+dnhsSmith<-read.csv("DNHS67_HGS_mQTL_Smith_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Smith Model", "DNHS"]<-sum(dnhsSmith$p<=0.05)
+tab["N FWER Sig: Smith Model", "DNHS"]<-sum(dnhsSmith$Bonferroni<=0.05)
+
+gtp<-gtpSmith[which(gtpSmith$p<=0.05), "SNP"]
+dnhs<-dnhsSmith[which(dnhsSmith$p<=0.05), "SNP"]
+tab["N p<0.05: Smith Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(gtp, dnhs)
+
+gtp<-gtpSmith[which(gtpSmith$Bonferroni<=0.05), "SNP"]
+dnhs<-dnhsSmith[which(dnhsSmith$Bonferroni<=0.05), "SNP"]
+tab["N FWER Sig: Smith Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(dnhsSmith, gtpSmith, dnhs, gtp)
+
+gtpArmstrong<-read.csv("GTP124_HGS_mQTL_Armstrong_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Armstrong Model", "GTP"]<-sum(gtpArmstrong$p<=0.05)
+tab["N FWER Sig: Armstrong Model", "GTP"]<-sum(gtpArmstrong$Bonferroni<=0.05)
+
+dnhsArmstrong<-read.csv("DNHS67_HGS_mQTL_Armstrong_results_50kb.csv", row.names=1, stringsAsFactors=F)
+tab["N p<0.05: Armstrong Model", "DNHS"]<-sum(dnhsArmstrong$p<=0.05)
+tab["N FWER Sig: Armstrong Model", "DNHS"]<-sum(dnhsArmstrong$Bonferroni<=0.05)
+
+gtp<-gtpArmstrong[which(gtpArmstrong$p<=0.05), "SNP"]
+dnhs<-dnhsArmstrong[which(dnhsArmstrong$p<=0.05), "SNP"]
+tab["N p<0.05: Armstrong Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(gtp, dnhs)
+
+gtp<-gtpArmstrong[which(gtpArmstrong$Bonferroni<=0.05), "SNP"]
+dnhs<-dnhsArmstrong[which(dnhsArmstrong$Bonferroni<=0.05), "SNP"]
+tab["N FWER Sig: Armstrong Model", "Overlap"]<-sum(dnhs%in%gtp)
+rm(dnhsArmstrong, gtpArmstrong, dnhs, gtp)
+
+kable(tab, caption="*HGS* Results")
+```
+
+\newpage
+
+# Methods
+
+## Data
+
+DNHS GWAS: PGC Freeze 1 data received from Laramie Duncan on 
+DNHS EWAS: QC'ed 450K data by Andrew Ratanatharathorn as part of the PGC EWAS Working group
+
+GTP GWAS: PGC Freeze 2 data received from Alicia Smith and Adriana Lori on  08/25/17. 
+GTP EWAS: QC'ed 450K data received from Varun Kilaru as part of the PGC EWAS Working group.
+
+## Statistical Methods
+
+**Smith Model:**
+
+Following the methodology of Smith et al. [@smith2014methylation], we modeled each CpG site's $\beta-values$ as a linear function of each of the SNPs within 50kb of significant CpG sites in *NRG1* and *HGS*. Model:
+
+$$CpG\ \beta\ value = \beta_0 + \beta_{1}SNP$$
+
+The p-values for each SNP-CpG association were then Bonferroni corrected. Note: Smith et al. only included SNPs and then covariates for the platform (Illumina vs Affymetrix) and hybridization batch in their linear model. No other demographic covariates were included.
+
+**Armstrong Model (Smith Model + Ancestry):**
+
+After reviewing the results of the Smith Model for the *MAP3K13* results, Don Armstrong hypothesized that the associations with methylation were due to ancestry. To test whether this is also the case here for *NRG1* and *HGS*, the 2nd, 3rd, and 4th Barfield PCs for DNHS and the 1st, 2nd, and 3rd GWAS PCs for GTP were added to the model. 
+
+Overview of workflow:
+
+1. SNPs +/- 50000bp from the gene extracted with the following code:
+
+> ./plink --bfile FILE --chr 17 --from-bp 79645226 --to-bp 79673668 --recodeA --out STUDY_HGS 
+
+> ./plink --bfile FILE --chr 8 --from-bp 31501353 --to-bp 32790757 --recodeA --out STUDY_NRG1 
+
+2. SNP genomic locations linked to HG19 positions using the R package *SNPlocs.Hsapiens.dbSNP144.GRCh37*.
+
+3. SNPs within 50000 bp of the significant CpG sites (, ) were included for mQTL testing using the Smith model and Armstrong model described below.
+
+4. Bonferroni correction was run for each gene within each study (e.g., for *NRG1* SNPs in GTP, *NRG1* SNPs in DNHS, etc).
+
+# Results
+
+## DNHS *NRG1*
+
+Of the 100 participants included in the PGC EWAS, 68 overlap with the PGC Freeze 1 GWAS data (all AA). Two participants have duplicate GWAS data. Resp ID 10821 has identical values for all SNPs but Resp ID 96 has different values for different SNPs. This individual is dropped from the analysis.
+
+```{r, eval=F, echo=F}
+rm(list=ls())
+
+# Getting genomic position for snps
+dnhs<-read.table("/Users/ly2207/Documents/Andrew/R/PGC/Current/PGC_EWAS/08.06.17/DNHS/Genotypes/DNHS_NRG1.raw",
+                stringsAsFactors=F, header=T)
+ncol(dnhs)-6 # 1928 SNPs
+snps<-colnames(dnhs)[grep("rs", colnames(dnhs))]
+snps<-unlist(lapply(strsplit(snps, "_"), function(x){x[1]}))
+snps<-gsub("m", "", snps)
+
+ref <- SNPlocs.Hsapiens.dbSNP144.GRCh37
+my_snps <- snpsById(ref, snps, ifnotfound="drop")
+snpPos<-data.frame(my_snps)
+length(snps[!snps%in%snpPos$RefSNP_id]) # 9 snps not found
+snpPos<-snpPos[, c("RefSNP_id", "pos")]
+
+chrs<-colnames(dnhs)[grep("chr", colnames(dnhs))]
+chrsPos<-unlist(lapply(strsplit(chrs, "_"), function(x) x[1]))
+chrsPos<-unlist(lapply(strsplit(chrsPos, "\\."), function(x) x[2]))
+chrs<-cbind(chrs, chrsPos)
+colnames(chrs)<-colnames(snpPos)
+snpPos<-rbind(snpPos, chrs)
+
+# Subsetting those within 50kb of cg23637605
+data(probe.features)
+cpgPos<-probe.features["cg23637605","MAPINFO"]
+snpList<-snpPos[which(snpPos$pos>=cpgPos-50000 & snpPos$pos<=cpgPos+50000), "RefSNP_id"]
+length(snpList)# 171
+#save(snpList, file="DNHS_NRG1_snpList_50kb.Rdata")
+
+# Creating Analytic dataset
+colInd<-NULL
+for(ii in 1:length(snpList)){
+  ind<-grep(snpList[ii], colnames(dnhs))
+  if(length(ind)>1){
+    print("ii")
+    break
+  }
+  colInd<-append(colInd, ind)
+}
+
+dnhs<-dnhs[, c(1:6, colInd)]
+rm(list=ls()[-match("dnhs", ls())])
+
+# Meth Phenotype file
+gwasPheno<-read.table("/Users/ly2207/Documents/Andrew/R/DNHS/DNHS_GWAS/DNHS812_PGC_Pheno.txt", 
+                      stringsAsFactors=F, sep="\t", header=T)
+all(dnhs$IID%in%gwasPheno$IID)
+rownames(gwasPheno)<-gwasPheno$IID
+rownames(dnhs)<-dnhs$IID
+all(rownames(dnhs)%in%rownames(gwasPheno))
+gwasPheno<-gwasPheno[rownames(dnhs), ]
+all(rownames(dnhs)==rownames(gwasPheno))
+dnhs$respID<-gwasPheno$respID
+
+pheno<-read.csv("/Users/ly2207/Documents/Andrew/R/DNHS/DNHS_Methylation/phenotype/DNHS179_meta_pheno_smoking_11.07.16.csv",
+                row.names=1, stringsAsFactors=F)
+cases<-rownames(pheno[pheno$PTSDpm==1,])
+controls<-rownames(pheno[pheno$PTSDlife==0, ])
+pheno<-pheno[c(cases, controls),]
+dnhs<-dnhs[dnhs$respID%in%pheno$resp, ]
+
+# Removing duplicates
+sum(duplicated(dnhs$respID)) # 2 duplicates
+dupes<-dnhs[which(duplicated(dnhs$respID)), "respID"]
+
+dnhs[which(dnhs$respID==10821),] # identical
+dnhs[which(dnhs$respID==96),] # very different
+write.csv(dnhs[which(dnhs$respID==96),], "DNHS_resp96_NRG1_data.csv")
+
+set.seed(83285)
+dnhs<-dnhs[-sample(which(dnhs$respID==10821), 1),] # selecting 1 random of 10821
+dnhs<-dnhs[-which(dnhs$respID==96),] # dropping resp 96
+
+rownames(dnhs)<-dnhs$respID
+all(rownames(dnhs)%in%rownames(pheno))
+pheno<-pheno[rownames(dnhs), ]
+all(rownames(pheno)==rownames(dnhs))
+rownames(pheno)<-pheno$SentrixBarcode_Position
+rownames(dnhs)<-rownames(pheno)
+
+# Load meth data
+load("/Users/ly2207/Documents/Andrew/R/DNHS/DNHS_Methylation/GenomeStudio/DNHS192_bkgd_beta_postComBat_bySample.Rdata")
+beta<-reversbeta  # rename DNAm data to beta.norm
+rm(missing, reversbeta)
+
+all(rownames(pheno)%in%colnames(beta))
+beta<-beta[, rownames(pheno)]
+all(colnames(beta)==rownames(pheno))
+all(rownames(t(beta["cg23637605", ]))==rownames(pheno))
+
+pheno<-cbind(pheno, as.numeric(t(beta["cg23637605", ])))
+colnames(pheno)[grep("cg23637605", colnames(pheno))]<-"cpg"
+
+# Merge Meth and GWAS data
+all(rownames(dnhs)==rownames(pheno))
+snps<-c(colnames(dnhs)[grep("rs", colnames(dnhs))], colnames(dnhs)[grep("chr", colnames(dnhs))])
+pheno<-cbind(pheno, dnhs[, snps])
+
+# Running mQTL Analysis: Smith Model
+rs<-snps
+sites<-colnames(pheno)[grep("cpg", colnames(pheno))]
+
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="DNHS67_NRG1_mQTL_Smith_results_50kb.csv")
+
+# Running mQTL Analysis: Armstrong Model
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], "+Comp.2+Comp.3+Comp.4", sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="DNHS67_NRG1_mQTL_Armstrong_results_50kb.csv")
+```
+
+**Smith Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("DNHS67_NRG1_mQTL_Smith_results_50kb.csv", row.names=1)
+kable(tab, caption="DNHS: *NRG1* Results, Smith Model")
+```
+
+\newpage
+
+**Armstrong Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("DNHS67_NRG1_mQTL_Armstrong_results_50kb.csv", row.names=1)
+kable(tab, caption="DNHS: *NRG1* Results, Armstrong Model")
+```
+
+\newpage
+
+## GTP *NRG1*
+
+```{r, eval=F, echo=F}
+rm(list=ls())
+# Getting genomic position for snps
+gtp<-read.table("/Users/ly2207/Documents/Andrew/R/PGC/Current/PGC_EWAS/08.06.17/GTP/Genotypes/GTP_NRG1_FREZ2.raw",
+                stringsAsFactors=F, header=T)
+snps<-colnames(gtp)[grep("rs", colnames(gtp))]
+snps<-unlist(lapply(strsplit(snps, "_"), function(x){x[1]}))
+snps<-gsub("m", "", snps)
+
+ref <- SNPlocs.Hsapiens.dbSNP144.GRCh37
+my_snps <- snpsById(ref, snps, ifnotfound="drop")
+snpPos<-data.frame(my_snps)
+length(snps[!snps%in%snpPos$RefSNP_id]) # 716 snps not found
+snpPos<-snpPos[, c("RefSNP_id", "pos")]
+
+chrs<-colnames(gtp)[grep("chr", colnames(gtp))]
+chrsPos<-unlist(lapply(strsplit(chrs, "_"), function(x) x[1]))
+chrsPos<-unlist(lapply(strsplit(chrsPos, "\\."), function(x) x[2]))
+chrs<-cbind(chrs, chrsPos)
+colnames(chrs)<-colnames(snpPos)
+snpPos<-rbind(snpPos, chrs)
+
+# Subsetting those within 50kb of cg23637605
+data(probe.features)
+cpgPos<-probe.features["cg23637605","MAPINFO"]
+snpList<-snpPos[which(snpPos$pos>=cpgPos-50000 & snpPos$pos<=cpgPos+50000), "RefSNP_id"]
+length(snpList)# 506
+#save(snpList, file="GTP_NRG1_snpList_50kb.Rdata")
+
+# Creating Analytic dataset
+colInd<-NULL
+for(ii in 1:length(snpList)){
+  ind<-grep(snpList[ii], colnames(gtp))
+  if(length(ind)>1){
+    print("ii")
+    break
+  }
+  colInd<-append(colInd, ind)
+}
+
+gtp<-gtp[, c(1:6, colInd)]
+rm(list=ls()[-match("gtp", ls())])
+
+# Meth Phenotype file
+gtp$id<-unlist(lapply(strsplit(gtp$IID, "_"), function(x) x[2]))
+
+pheno<-read.csv("/Users/ly2207/Documents/Andrew/R/GTP/Raw/DNHS_GTP_Phenotype_for_Analysis_02.26.17.csv", 
+                row.names=1, stringsAsFactors = F) # Subjects x Variables
+pheno<-pheno[!is.na(pheno$PC1), ] # just GTP phenotypes
+
+pheno<-pheno[which(pheno$ID%in%gtp$id),]
+gtp<-gtp[which(gtp$id%in%pheno$ID),]
+length(unique(gtp$id))
+rownames(gtp)<-c(1:nrow(gtp))
+
+dupes<-unique(gtp$id[which(duplicated(gtp$id))])
+rows<-NULL
+rmvRows<-NULL
+
+set.seed(4797432)
+for(ii in 1:length(dupes)){
+  dupeRows<-grep(dupes[ii], gtp$id)
+  rows<-append(rows, dupeRows)
+  miss<-apply(gtp[dupeRows,], 1, function(x) sum(is.na(x)))
+  minVal<-min(miss)
+  if(length(which(miss==minVal))==1){
+    keep<-names(miss)[which(miss==minVal)]
+    rmvRows<-append(rmvRows, names(miss)[!names(miss)%in%keep])
+    rm(keep, miss)
+  }else if(length(which(miss==minVal))>1){
+    rmvRows<-append(rmvRows, names(miss[which(miss!=minVal)]))
+    miss<-miss[which(miss==minVal)]
+    keep<-sample(miss, 1)
+    rmvRows<-append(rmvRows, names(miss)[!names(miss)%in%names(keep)])
+    rm(keep, miss)
+  }
+}
+rmvRows
+gtp<-gtp[!rownames(gtp)%in%rmvRows, ]
+rownames(gtp)<-gtp$id
+rownames(pheno)<-pheno$ID
+all(rownames(pheno)%in%rownames(gtp))
+gtp<-gtp[rownames(pheno),]
+
+# Load meth data
+load("/Users/ly2207/Documents/Andrew/R/GTP/Emory_QC/GTP283_BMIQ_postComBat.Rdata") # cpg X subjects
+all(rownames(pheno)%in%colnames(beta))
+beta<-beta[, rownames(pheno)]
+all(colnames(beta)==rownames(pheno))
+all(rownames(t(beta["cg23637605", ]))==rownames(pheno))
+pheno<-cbind(pheno, t(beta["cg23637605", ]))
+colnames(pheno)[match("cg23637605", colnames(pheno))]<-"cpg"
+
+# Merge Meth and GWAS data
+all(rownames(gtp)==rownames(pheno))
+snps<-c(colnames(gtp)[grep("rs", colnames(gtp))], colnames(gtp)[grep("chr", colnames(gtp))])
+pheno<-cbind(pheno, gtp[, snps])
+
+# Running mQTL Analysis: Smith Model
+rs<-snps
+sites<-colnames(pheno)[grep("cpg", colnames(pheno))]
+
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="GTP124_NRG1_mQTL_Smith_results_50kb.csv")
+
+# Running mQTL Analysis: Armstrong Model
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], "+PC1+PC2+PC3", sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="GTP124_NRG1_mQTL_Armstrong_results_50kb.csv")
+```
+
+**Smith Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("GTP124_NRG1_mQTL_Smith_results_50kb.csv", row.names=1)
+kable(tab, caption="GTP: *NRG1* Results, Smith Model")
+```
+
+\newpage
+
+**Armstrong Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("GTP124_NRG1_mQTL_Armstrong_results_50kb.csv", row.names=1)
+kable(tab, caption="GTP: *NRG1* Results, Armstrong Model")
+```
+
+\newpage
+
+## DNHS *HGS*
+
+Again, Resp ID 96 is dropped from the analysis because its duplicates do not match.
+
+```{r, eval=F, echo=F}
+rm(list=ls())
+
+# Getting genomic position for snps
+dnhs<-read.table("/Users/ly2207/Documents/Andrew/R/PGC/Current/PGC_EWAS/08.06.17/DNHS/Genotypes/DNHS_HGS.raw",
+                stringsAsFactors=F, header=T)
+ncol(dnhs)-6 # 61 SNPs
+snps<-colnames(dnhs)[grep("rs", colnames(dnhs))]
+snps<-unlist(lapply(strsplit(snps, "_"), function(x){x[1]}))
+snps<-gsub("m", "", snps)
+
+ref <- SNPlocs.Hsapiens.dbSNP144.GRCh37
+my_snps <- snpsById(ref, snps, ifnotfound="drop")
+snpPos<-data.frame(my_snps)
+length(snps[!snps%in%snpPos$RefSNP_id]) # 0 snps not found
+snpPos<-snpPos[, c("RefSNP_id", "pos")]
+
+chrs<-colnames(dnhs)[grep("chr", colnames(dnhs))]
+chrsPos<-unlist(lapply(strsplit(chrs, "_"), function(x) x[2]))
+chrs<-cbind(chrs, chrsPos)
+colnames(chrs)<-colnames(snpPos)
+snpPos<-rbind(snpPos, chrs)
+
+# Subsetting those within 50kb of cg19577098
+data(probe.features)
+cpgPos<-probe.features["cg19577098","MAPINFO"]
+snpList<-snpPos[which(snpPos$pos>=cpgPos-50000 & snpPos$pos<=cpgPos+50000), "RefSNP_id"]
+length(snpList)# 61
+#save(snpList, file="DNHS_HGS_snpList_50kb.Rdata")
+
+# Creating Analytic dataset
+colInd<-NULL
+for(ii in 1:length(snpList)){
+  ind<-grep(snpList[ii], colnames(dnhs))
+  if(length(ind)>1){
+    print("ii")
+    break
+  }
+  colInd<-append(colInd, ind)
+}
+
+dnhs<-dnhs[, c(1:6, colInd)]
+rm(list=ls()[-match("dnhs", ls())])
+
+# Meth Phenotype file
+gwasPheno<-read.table("/Users/ly2207/Documents/Andrew/R/DNHS/DNHS_GWAS/DNHS812_PGC_Pheno.txt", 
+                      stringsAsFactors=F, sep="\t", header=T)
+all(dnhs$IID%in%gwasPheno$IID)
+rownames(gwasPheno)<-gwasPheno$IID
+rownames(dnhs)<-dnhs$IID
+all(rownames(dnhs)%in%rownames(gwasPheno))
+gwasPheno<-gwasPheno[rownames(dnhs), ]
+all(rownames(dnhs)==rownames(gwasPheno))
+dnhs$respID<-gwasPheno$respID
+
+pheno<-read.csv("/Users/ly2207/Documents/Andrew/R/DNHS/DNHS_Methylation/phenotype/DNHS179_meta_pheno_smoking_11.07.16.csv",
+                row.names=1, stringsAsFactors=F)
+cases<-rownames(pheno[pheno$PTSDpm==1,])
+controls<-rownames(pheno[pheno$PTSDlife==0, ])
+pheno<-pheno[c(cases, controls),]
+dnhs<-dnhs[dnhs$respID%in%pheno$resp, ]
+
+# Removing duplicates
+sum(duplicated(dnhs$respID)) # 2 duplicates
+dupes<-dnhs[which(duplicated(dnhs$respID)), "respID"]
+
+dnhs[which(dnhs$respID==10821),] # identical
+dnhs[which(dnhs$respID==96),] # very different
+write.csv(dnhs[which(dnhs$respID==96),], "DNHS_resp96_HGS_data.csv")
+
+set.seed(83285)
+dnhs<-dnhs[-sample(which(dnhs$respID==10821), 1),] # selecting 1 random of 10821
+dnhs<-dnhs[-which(dnhs$respID==96),] # dropping resp 96
+
+rownames(dnhs)<-dnhs$respID
+all(rownames(dnhs)%in%rownames(pheno))
+pheno<-pheno[rownames(dnhs), ]
+all(rownames(pheno)==rownames(dnhs))
+rownames(pheno)<-pheno$SentrixBarcode_Position
+rownames(dnhs)<-rownames(pheno)
+
+# Load meth data
+load("/Users/ly2207/Documents/Andrew/R/DNHS/DNHS_Methylation/GenomeStudio/DNHS192_bkgd_beta_postComBat_bySample.Rdata")
+beta<-reversbeta  # rename DNAm data to beta.norm
+rm(missing, reversbeta)
+
+all(rownames(pheno)%in%colnames(beta))
+beta<-beta[, rownames(pheno)]
+all(colnames(beta)==rownames(pheno))
+all(rownames(t(beta["cg19577098", ]))==rownames(pheno))
+
+pheno<-cbind(pheno, as.numeric(t(beta["cg19577098", ])))
+colnames(pheno)[grep("cg19577098", colnames(pheno))]<-"cpg"
+
+# Merge Meth and GWAS data
+all(rownames(dnhs)==rownames(pheno))
+snps<-c(colnames(dnhs)[grep("rs", colnames(dnhs))], colnames(dnhs)[grep("chr", colnames(dnhs))])
+pheno<-cbind(pheno, dnhs[, snps])
+
+# Running mQTL Analysis: Smith Model
+rs<-snps
+sites<-colnames(pheno)[grep("cpg", colnames(pheno))]
+
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="DNHS67_HGS_mQTL_Smith_results_50kb.csv")
+
+# Running mQTL Analysis: Armstrong Model
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], "+Comp.2+Comp.3+Comp.4",sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="DNHS67_HGS_mQTL_Armstrong_results_50kb.csv")
+View(results)
+```
+
+\newpage
+
+**Smith Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("DNHS67_HGS_mQTL_Smith_results_50kb.csv", row.names=1)
+kable(tab, caption="DNHS: *HGS* Results, Smith Model")
+```
+
+\newpage
+
+**Armstrong Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("DNHS67_HGS_mQTL_Armstrong_results_50kb.csv", row.names=1)
+kable(tab, caption="DNHS: *HGS* Results, Armstrong Model")
+```
+
+\newpage
+
+## GTP *HGS*
+
+Note: of the 124 participants with both GWAS and EWAS data, there were 46 participants with duplicate GWAS samples. If both samples had an equal number of missing values, a random sample was chosen for that participant. Otherwise, the sample with the fewest missing values was chosen.
+
+```{r, eval=F, echo=F}
+rm(list=ls())
+
+# Loading Data and getting genomic position
+gtp<-read.table("/Users/ly2207/Documents/Andrew/R/PGC/Current/PGC_EWAS/08.06.17/GTP/Genotypes/GTP_HGS_FREZ2.raw",
+                stringsAsFactors=F, header=T)
+snps<-colnames(gtp)[grep("rs", colnames(gtp))]
+snps<-unlist(lapply(strsplit(snps, "_"), function(x){x[1]}))
+snps<-gsub("m", "", snps)
+
+ref <- SNPlocs.Hsapiens.dbSNP144.GRCh37
+my_snps <- snpsById(ref, snps, ifnotfound="drop")
+snpPos<-data.frame(my_snps)
+length(snps[!snps%in%snpPos$RefSNP_id]) # 17 snps not found
+snpPos<-snpPos[, c("RefSNP_id", "pos")]
+
+chrs<-colnames(gtp)[grep("chr", colnames(gtp))]
+chrsPos<-unlist(lapply(strsplit(chrs, "_"), function(x) x[1]))
+chrsPos<-unlist(lapply(strsplit(chrsPos, "\\."), function(x) x[2]))
+chrs<-cbind(chrs, chrsPos)
+colnames(chrs)<-colnames(snpPos)
+snpPos<-rbind(snpPos, chrs)
+
+# Subsetting those within 50kb of cg19577098
+data(probe.features)
+cpgPos<-probe.features["cg19577098","MAPINFO"]
+snpList<-snpPos[which(snpPos$pos>=cpgPos-50000 & snpPos$pos<=cpgPos+50000), "RefSNP_id"] # 69 SNPs
+save(snpList, file="GTP_HGS_snpList_50kb.Rdata")
+length(snpList) #183
+
+# Creating GWAS analytic dataset
+colInd<-NULL
+for(ii in 1:length(snpList)){
+  ind<-grep(snpList[ii], colnames(gtp))
+  if(length(ind)>1){
+    print("ii")
+    break
+  }
+  colInd<-append(colInd, ind)
+}
+gtp<-gtp[, c(1:6, colInd)]
+rm(list=ls()[-match("gtp", ls())])
+
+# Adding Methylation IDs and removing duplicates
+gtp$id<-unlist(lapply(strsplit(gtp$IID, "_"), function(x) x[2]))
+
+pheno<-read.csv("/Users/ly2207/Documents/Andrew/R/GTP/Raw/DNHS_GTP_Phenotype_for_Analysis_02.26.17.csv", 
+                row.names=1, stringsAsFactors = F) # Subjects x Variables
+pheno<-pheno[!is.na(pheno$PC1), ] # just GTP phenotypes
+
+pheno<-pheno[which(pheno$ID%in%gtp$id),]
+gtp<-gtp[which(gtp$id%in%pheno$ID),]
+length(unique(gtp$id))
+rownames(gtp)<-c(1:nrow(gtp))
+
+dupes<-unique(gtp$id[which(duplicated(gtp$id))])
+rows<-NULL
+rmvRows<-NULL
+
+set.seed(4797432)
+for(ii in 1:length(dupes)){
+  dupeRows<-grep(dupes[ii], gtp$id)
+  rows<-append(rows, dupeRows)
+  miss<-apply(gtp[dupeRows,], 1, function(x) sum(is.na(x)))
+  minVal<-min(miss)
+  if(length(which(miss==minVal))==1){
+    keep<-names(miss)[which(miss==minVal)]
+    rmvRows<-append(rmvRows, names(miss)[!names(miss)%in%keep])
+    rm(keep, miss)
+  }else if(length(which(miss==minVal))>1){
+    rmvRows<-append(rmvRows, names(miss[which(miss!=minVal)]))
+    miss<-miss[which(miss==minVal)]
+    keep<-sample(miss, 1)
+    rmvRows<-append(rmvRows, names(miss)[!names(miss)%in%names(keep)])
+    rm(keep, miss)
+  }
+}
+rmvRows
+gtp<-gtp[!rownames(gtp)%in%rmvRows, ]
+rownames(gtp)<-gtp$id
+rownames(pheno)<-pheno$ID
+all(rownames(pheno)%in%rownames(gtp))
+gtp<-gtp[rownames(pheno),]
+
+# Combining with methylation data
+load("/Users/ly2207/Documents/Andrew/R/GTP/Emory_QC/GTP283_BMIQ_postComBat.Rdata") 
+all(rownames(pheno)%in%colnames(beta))
+beta<-beta[, rownames(pheno)]
+all(colnames(beta)==rownames(pheno))
+all(rownames(t(beta["cg19577098", ]))==rownames(pheno))
+pheno<-cbind(pheno, t(beta["cg19577098", ]))
+colnames(pheno)[match("cg19577098", colnames(pheno))]<-"cpg"
+
+all(rownames(gtp)==rownames(pheno))
+snps<-c(colnames(gtp)[grep("rs", colnames(gtp))], colnames(gtp)[grep("chr", colnames(gtp))])
+pheno<-cbind(pheno, gtp[, snps])
+
+# Running mQTL Analysis: Smith Model
+rs<-snps
+sites<-colnames(pheno)[grep("cpg", colnames(pheno))]
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="GTP124_HGS_mQTL_Smith_results_50kb.csv")
+
+# Running mQTL Analysis: Armstrong Model
+results<-matrix(nrow=length(sites)*length(rs), ncol=7)
+colnames(results)<-c("CpG", "SNP", "Estimate", "SE", "t", "p", "Bonferroni")
+results[, "CpG"]<-rep(sites, each=length(rs))
+results[, "SNP"]<-rep(rs, times=length(sites))
+
+for(ii in 1:nrow(results)){
+  form<-as.formula(paste(results[ii, "CpG"], "~", results[ii, "SNP"], "+PC1+PC2+PC3", sep=""))
+  fit<-lm(form, data=pheno)
+  results[ii, "Estimate"]<-round(summary(fit)$coef[2, "Estimate"],4)
+  results[ii, "SE"]<-round(summary(fit)$coef[2, "Std. Error"],4)
+  results[ii, "t"]<-round(summary(fit)$coef[2, "t value"],4)
+  results[ii, "p"]<-round(summary(fit)$coef[2, "Pr(>|t|)"],4)
+  rm(fit, form)
+}
+results[, "Bonferroni"]<-round(p.adjust(p=as.numeric(results[, "p"]), method="bonferroni", n=nrow(results)),4)
+write.csv(results, file="GTP124_HGS_mQTL_Armstrong_results_50kb.csv")
+```
+
+**Smith Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("GTP124_HGS_mQTL_Smith_results_50kb.csv", row.names=1)
+kable(tab, caption="GTP: *HGS* Results, Smith Model")
+```
+
+\newpage
+
+**Armstrong Model Results:**
+
+```{r, echo=F}
+rm(list=ls())
+tab<-read.csv("GTP124_HGS_mQTL_Armstrong_results_50kb.csv", row.names=1)
+kable(tab, caption="GTP: *HGS* Results, Armstrong Model")
+```
+
+\newpage
+
+**References:**
+
+
+
